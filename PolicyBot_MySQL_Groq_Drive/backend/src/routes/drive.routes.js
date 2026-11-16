@@ -1,0 +1,10 @@
+import {Router} from 'express';
+import {authenticate,adminOnly} from '../middlewares/auth.js';
+import {asyncHandler} from '../middlewares/error.js';
+import {folderSchema} from '../utils/validation.js';
+import {configureFolder,folderDetails,syncDrive} from '../services/drive.service.js';
+const router=Router();router.use(authenticate,adminOnly);
+router.get('/',asyncHandler(async(req,res)=>res.json(await folderDetails(req.companyId))));
+router.put('/',asyncHandler(async(req,res)=>{const {folderId}=folderSchema.parse(req.body);await configureFolder(req.companyId,folderId);res.json({ok:true,folderId});}));
+router.post('/sync',asyncHandler(async(req,res)=>res.json(await syncDrive(req.companyId))));
+export default router;

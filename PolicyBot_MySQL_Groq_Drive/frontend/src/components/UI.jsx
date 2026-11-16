@@ -1,0 +1,5 @@
+import {AlertCircle,CheckCircle2,LoaderCircle,X} from 'lucide-react';
+export function Notice({error,success,onClose}){if(!error&&!success)return null;return <div className={'notice '+(error?'notice-error':'notice-success')} role="status">{error?<AlertCircle size={17}/>:<CheckCircle2 size={17}/>}<span>{error||success}</span>{onClose&&<button className="icon-button" onClick={onClose} aria-label="Cerrar aviso"><X size={16}/></button>}</div>;}
+export function Spinner({label='Cargando…'}){return <div className="loading"><LoaderCircle className="spin" size={21}/>{label}</div>;}
+export function Progress({value,max}){const pct=Math.min(100,Math.round(value/Math.max(max,1)*100));return <div className="meter" role="progressbar" aria-valuenow={value} aria-valuemax={max}><span style={{width:pct+'%'}}/></div>;}
+export function Empty({icon:Icon,title,description,action}){return <div className="empty-state">{Icon&&<div className="empty-icon"><Icon size={23}/></div>}<h3>{title}</h3><p>{description}</p>{action}</div>;}

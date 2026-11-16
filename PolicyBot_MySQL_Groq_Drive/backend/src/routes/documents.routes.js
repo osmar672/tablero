@@ -1,0 +1,27 @@
+import {Router} from 'express';
+import multer from 'multer';
+import path from 'node:path';
+import {env} from '../config/env.js';
+import {authenticate,adminOnly} from '../middlewares/auth.js';
+import {asyncHandler} from '../middlewares/error.js';
+import {HttpError} from '../utils/errors.js';
+import {idSchema} from '../utils/validation.js';
+import {createDocument,indexDocument,listDocuments,removeDocument,reindexExisting} from '../services/documents.service.js';
+import {extractFile} from '../services/extraction.service.js';
+const router=Router();router.use(authenticate);
+const extensions=new Map([['.pdf','application/pdf'],['.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document'],['.txt','text/plain'],['.md','text/markdown'],['.csv','text/csv']]);
+const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:env.uploadLimit,files:1}});
+router.get('/',asyncHandler(async(req,res)=>res.json({documents:await listDocuments(req.companyId)})));
+router.post('/upload',adminOnly,upload.single('file'),asyncHandler(async(req,res)=>{
+  if(!req.file)throw new HttpError(400,'Selecciona un documento');
+  const name=path.basename(req.file.originalname).slice(0,255);
+  const mime=extensions.get(path.extname(name).toLowerCase());
+  if(!mime)throw new HttpError(415,'Solo se permiten PDF, DOCX, TXT, MD o CSV');
+  const text=await extractFile(req.file.buffer,mime);
+  const id=await createDocument({companyId:req.companyId,name,mime});
+  const chunkCount=await indexDocument(req.companyId,id,text);
+  res.status(201).json({document:{id,name,state:'indexado',chunkCount}});
+}));
+router.post('/:id/reindex',adminOnly,asyncHandler(async(req,res)=>{const id=idSchema.parse(req.params.id);const chunkCount=await reindexExisting(req.companyId,id);res.json({ok:true,chunkCount});}));
+router.delete('/:id',adminOnly,asyncHandler(async(req,res)=>{const id=idSchema.parse(req.params.id);await removeDocument(req.companyId,id);res.json({ok:true});}));
+export default router;
