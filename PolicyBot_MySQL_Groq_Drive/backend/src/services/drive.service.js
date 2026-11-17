@@ -17,7 +17,13 @@ const active=new Set();
 export function driveClient(){
   const file=path.resolve(env.backendDir,env.googleCredentials);
   if(!fs.existsSync(file))throw new HttpError(503,'No hay credenciales de Google Drive. Configura la cuenta de servicio');
-  const auth=new google.auth.GoogleAuth({keyFile:file,scopes:['https://www.googleapis.com/auth/drive.readonly']});
+  let credentials;
+  try{
+    if(fs.statSync(file).size>100000)throw new Error('size');
+    credentials=JSON.parse(fs.readFileSync(file,'utf8'));
+    if(credentials.type!=='service_account'||typeof credentials.client_email!=='string'||typeof credentials.private_key!=='string'||!credentials.private_key.includes('BEGIN PRIVATE KEY'))throw new Error('format');
+  }catch{throw new HttpError(503,'La cuenta de servicio de Google Drive no está configurada correctamente. Contacta al administrador.');}
+  const auth=new google.auth.GoogleAuth({credentials,scopes:['https://www.googleapis.com/auth/drive.readonly']});
   return google.drive({version:'v3',auth});
 }
 export function validFolder(id){return /^[A-Za-z0-9_-]{10,120}$/.test(id);}
@@ -65,10 +71,10 @@ export async function folderDetails(companyId){
 }
 export async function syncDrive(companyId,{client=null}={}){
   if(active.has(companyId))throw new HttpError(409,'Ya hay una sincronización en curso');
-  const company=await one('SELECT drive_folder_id FROM companies WHERE id=?',[companyId]);
-  if(!company?.drive_folder_id)throw new HttpError(400,'Configura primero una carpeta de Drive');
   active.add(companyId);const id=randomUUID();let scanned=0,indexed=0;const errors=[];
   try{
+    const company=await one('SELECT drive_folder_id FROM companies WHERE id=?',[companyId]);
+    if(!company?.drive_folder_id)throw new HttpError(400,'Configura primero una carpeta de Drive');
     await run('INSERT INTO sync_runs(id,company_id,state) VALUES (?, ?, ?)',[id,companyId,'running']);
     const api=client||driveClient();
     await validateFolder(company.drive_folder_id,api);

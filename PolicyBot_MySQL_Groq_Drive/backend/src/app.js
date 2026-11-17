@@ -8,7 +8,8 @@ import docs from './routes/documents.routes.js';
 import drive from './routes/drive.routes.js';
 import chat from './routes/chat.routes.js';
 import usage from './routes/usage.routes.js';
-import {errors} from './middlewares/error.js';
+import {pool} from './db/pool.js';
+import {asyncHandler,errors} from './middlewares/error.js';
 import {HttpError} from './utils/errors.js';
 import {env} from './config/env.js';
 const app=express();app.disable('x-powered-by');
@@ -23,7 +24,7 @@ app.use('/api',(req,res,next)=>{
     }catch{return next(new HttpError(403,'Origen inválido'));}
   }next();
 });
-app.get('/api/health',(_req,res)=>res.json({ok:true,app:'PolicyBot',database:'mysql',chat:'groq'}));
+app.get('/api/health',asyncHandler(async(_req,res)=>{await pool.query({sql:'SELECT 1',timeout:3000});res.json({ok:true,app:'PolicyBot',database:'mysql',chat:'groq'});}));
 app.use('/api/auth',auth);app.use('/api/users',users);app.use('/api/documents',docs);app.use('/api/drive',drive);app.use('/api/chat',chat);app.use('/api/usage',usage);
 app.use('/api',(_req,_res,next)=>next(new HttpError(404,'Ruta no encontrada')));
 const dist=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../frontend/dist');

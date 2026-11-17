@@ -23,11 +23,11 @@ export async function createDocument({companyId,name,mime,source='upload',driveF
 export async function indexDocument(companyId,documentId,text){
   const doc=await one('SELECT id FROM documents WHERE id=? AND company_id=?',[documentId,companyId]);
   if(!doc)throw new HttpError(404,'Documento no encontrado');
+  try{
   const pieces=splitText(text);
   if(!pieces.length)throw new HttpError(422,'Documento sin contenido indexable');
   if(pieces.length>350)throw new HttpError(413,'Documento demasiado largo para este MVP');
   await run(`UPDATE documents SET state='indexando',error_message=NULL WHERE id=? AND company_id=?`,[documentId,companyId]);
-  try{
     const vectors=[];
     for(let i=0;i<pieces.length;i+=32)vectors.push(...await embed(pieces.slice(i,i+32),'document'));
     await transaction(async cx=>{
@@ -58,4 +58,13 @@ export async function reindexExisting(companyId,documentId){
     });
     return pieces.length;
   }catch(error){await run("UPDATE documents SET state='error',error_message=? WHERE id=? AND company_id=?",[String(error.message||'Error').slice(0,340),documentId,companyId]);throw error;}
+}
+
+export async function previewDocument(companyId,id,offset=0){
+  if(!Number.isInteger(offset)||offset<0||offset>10000)throw new HttpError(400,'Posición de lectura inválida');
+  const document=await one('SELECT id,name,source,state,drive_url FROM documents WHERE id=? AND company_id=?',[id,companyId]);
+  if(!document)throw new HttpError(404,'Documento no encontrado');
+  const count=await one('SELECT COUNT(*) AS total FROM chunks WHERE document_id=? AND company_id=?',[id,companyId]);
+  const chunks=await many('SELECT chunk_index,content FROM chunks WHERE document_id=? AND company_id=? ORDER BY chunk_index LIMIT 5 OFFSET '+offset,[id,companyId]);
+  return {document,chunks,total:Number(count.total),nextOffset:offset+chunks.length<Number(count.total)?offset+chunks.length:null};
 }

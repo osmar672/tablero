@@ -31,13 +31,13 @@ if(!portWorks){
   let connection;
   try{
     connection=await mysql.createConnection({...env.db,connectTimeout:5000});
-    const [rows]=await connection.query("SELECT COUNT(*) AS total FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME LIKE 'pb_%'");
+    const [rows]=await connection.query("SELECT COUNT(*) AS total FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('plans','companies','users','documents','chunks','messages','sync_runs')");
     console.log(`Conexión a MySQL: OK. Tablas PolicyBot detectadas: ${rows[0].total}.`);
     if(rows[0].total===0)console.log('Ejecuta npm run db:migrate para crear las tablas.');
   }catch(error){
     console.error(`Conexión TCP disponible, pero MySQL rechazó la conexión: ${error.code||error.message}.`);
     if(error.code==='ER_ACCESS_DENIED_ERROR')console.log('Verifica MYSQL_USER y MYSQL_PASSWORD.');
-    if(error.code==='ER_BAD_DB_ERROR')console.log('La base no existe. Usa npm run db:migrate (requiere permisos CREATE DATABASE).');
+    if(error.code==='ER_BAD_DB_ERROR')console.log('La base no existe. Solicita al administrador que cree MYSQL_DATABASE y conceda acceso al usuario de la aplicación; después ejecuta npm run db:migrate.');
     process.exitCode=1;
   }finally{await connection?.end();}
 }

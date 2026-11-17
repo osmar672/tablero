@@ -1,3 +1,4 @@
+import cron from 'node-cron';
 import dotenv from 'dotenv';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +20,10 @@ export const env = {
   uploadLimit:Math.max(1,Math.min(25,Number(process.env.MAX_UPLOAD_MB||10)))*1024*1024
 };
 export function assertConfig(){
+  for(const [name,value] of [['PORT',env.port],['MYSQL_PORT',env.db.port]])if(!Number.isInteger(value)||value<1||value>65535)throw new Error(`${name} debe ser un puerto entre 1 y 65535`);
+  if(!Number.isFinite(env.uploadLimit)||env.uploadLimit<1)throw new Error('MAX_UPLOAD_MB debe ser un número válido');
+  if(!cron.validate(env.syncCron))throw new Error('SYNC_CRON inválido');
+  if(!['development','test','production'].includes(env.nodeEnv))throw new Error('NODE_ENV debe ser development, test o production');
   if(env.jwtSecret.length<32 || env.jwtSecret.startsWith('REEMPLAZA')) throw new Error('Configura JWT_SECRET aleatorio (mínimo 32 caracteres) en backend/.env');
   if(!['local','voyage'].includes(env.embeddingProvider)) throw new Error('EMBEDDING_PROVIDER debe ser local o voyage');
   if(env.embeddingProvider==='voyage'&&!env.voyageKey) throw new Error('Falta VOYAGE_API_KEY para embeddings Voyage');

@@ -13,7 +13,11 @@
     "db:migrate": "npm run migrate -w backend",
     "db:seed": "npm run seed -w backend",
     "test": "npm run test -w backend",
-    "smoke": "node scripts/smoke-api.mjs"
+    "smoke": "node scripts/smoke-api.mjs",
+    "setup:env": "node scripts/setup-env.mjs",
+    "db:doctor": "node backend/src/db/doctor.js",
+    "check:concurrency": "node scripts/check-concurrency.mjs",
+    "check:api": "node scripts/check-api.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

@@ -1,24 +1,24 @@
--- SOLO si ejecutas SQL manualmente en MySQL Workbench.
--- Crea exclusivamente tablas pb_*; no borra nada de tablero.
+-- Alternativa manual para una base dedicada a PolicyBot. No ejecutar sobre tablas de otra aplicación.
+-- Equivalente a database/migrations/001_init.sql; se recomienda npm run db:migrate.
 CREATE DATABASE IF NOT EXISTS `tablero` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `tablero`;
 
-CREATE TABLE IF NOT EXISTS pb_plans (
+CREATE TABLE IF NOT EXISTS plans (
   id VARCHAR(20) PRIMARY KEY,
   max_documents INT NOT NULL,
   max_questions_month INT NOT NULL
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS pb_companies (
+CREATE TABLE IF NOT EXISTS companies (
   id CHAR(36) PRIMARY KEY,
   name VARCHAR(150) NOT NULL,
   plan_id VARCHAR(20) NOT NULL DEFAULT 'gratis',
   drive_folder_id VARCHAR(120) NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  FOREIGN KEY (plan_id) REFERENCES pb_plans(id)
+  FOREIGN KEY (plan_id) REFERENCES plans(id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS pb_users (
+CREATE TABLE IF NOT EXISTS users (
   id CHAR(36) PRIMARY KEY,
   company_id CHAR(36) NOT NULL,
   email VARCHAR(190) NOT NULL,
@@ -29,10 +29,10 @@ CREATE TABLE IF NOT EXISTS pb_users (
   UNIQUE KEY uq_users_email (email),
   UNIQUE KEY uq_user_tenant (id,company_id),
   INDEX ix_user_company (company_id),
-  FOREIGN KEY (company_id) REFERENCES pb_companies(id) ON DELETE CASCADE
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS pb_documents (
+CREATE TABLE IF NOT EXISTS documents (
   id CHAR(36) PRIMARY KEY,
   company_id CHAR(36) NOT NULL,
   name VARCHAR(255) NOT NULL,
@@ -49,10 +49,10 @@ CREATE TABLE IF NOT EXISTS pb_documents (
   UNIQUE KEY uq_docs_tenant_drive (company_id,drive_file_id),
   UNIQUE KEY uq_doc_tenant (id,company_id),
   INDEX ix_doc_tenant_state (company_id,state),
-  FOREIGN KEY (company_id) REFERENCES pb_companies(id) ON DELETE CASCADE
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS pb_chunks (
+CREATE TABLE IF NOT EXISTS chunks (
   id CHAR(36) PRIMARY KEY,
   company_id CHAR(36) NOT NULL,
   document_id CHAR(36) NOT NULL,
@@ -62,11 +62,11 @@ CREATE TABLE IF NOT EXISTS pb_chunks (
   embedding_model VARCHAR(100) NOT NULL,
   UNIQUE KEY uq_doc_chunk (document_id,chunk_index),
   INDEX ix_chunks_company (company_id),
-  FOREIGN KEY (document_id,company_id) REFERENCES pb_documents(id,company_id) ON DELETE CASCADE,
-  FOREIGN KEY (company_id) REFERENCES pb_companies(id) ON DELETE CASCADE
+  FOREIGN KEY (document_id,company_id) REFERENCES documents(id,company_id) ON DELETE CASCADE,
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS pb_messages (
+CREATE TABLE IF NOT EXISTS messages (
   id CHAR(36) PRIMARY KEY,
   company_id CHAR(36) NOT NULL,
   user_id CHAR(36) NOT NULL,
@@ -78,11 +78,11 @@ CREATE TABLE IF NOT EXISTS pb_messages (
   state ENUM('processing','ok','error') NOT NULL DEFAULT 'processing',
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   INDEX ix_msg_company_time (company_id,created_at),
-  FOREIGN KEY (user_id,company_id) REFERENCES pb_users(id,company_id),
-  FOREIGN KEY (company_id) REFERENCES pb_companies(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id,company_id) REFERENCES users(id,company_id),
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS pb_sync_runs (
+CREATE TABLE IF NOT EXISTS sync_runs (
   id CHAR(36) PRIMARY KEY,
   company_id CHAR(36) NOT NULL,
   state ENUM('running','ok','error') NOT NULL,
@@ -92,8 +92,8 @@ CREATE TABLE IF NOT EXISTS pb_sync_runs (
   started_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   finished_at DATETIME(3) NULL,
   INDEX ix_sync_company_time (company_id,started_at),
-  FOREIGN KEY (company_id) REFERENCES pb_companies(id) ON DELETE CASCADE
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-INSERT IGNORE INTO pb_plans(id,max_documents,max_questions_month) VALUES ('gratis',10,200),('pro',500,10000);
-
+INSERT INTO plans(id,max_documents,max_questions_month) VALUES ('gratis',10,200),('pro',500,10000)
+ON DUPLICATE KEY UPDATE id=VALUES(id);

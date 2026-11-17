@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
-if [[ ! -f backend/.env ]]; then cp backend/.env.example backend/.env; echo 'Configura backend/.env (JWT_SECRET y GROQ_API_KEY)'; exit 1; fi
-docker compose up -d db
-npm install
+command -v node >/dev/null || { echo 'Instala Node.js 22.16 o superior'; exit 1; }
+command -v docker >/dev/null || { echo 'Instala Docker Engine con Compose'; exit 1; }
+npm run setup:env
+docker compose up -d --wait db
+npm ci
 npm run db:migrate
 npm run dev

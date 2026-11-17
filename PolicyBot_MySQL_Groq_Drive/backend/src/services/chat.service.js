@@ -19,7 +19,7 @@ export async function prepareQuestion({companyId,userId,question,rank=rankChunks
   const messageId=await reserveQuestion(companyId,userId,question);
   try{
     const sources=await rank(companyId,question);
-    if(sources.length&&!env.groqKey)throw new HttpError(503,'Configura GROQ_API_KEY para utilizar el chatbot');
+    if(sources.length&&!env.groqKey)throw new HttpError(503,'El servicio de respuestas no está configurado. Contacta al administrador.');
     return {sources,messageId};
   }catch(error){
     await run(`UPDATE messages SET state='error',answer=? WHERE id=? AND company_id=?`,[String(error.message||'Error').slice(0,200),messageId,companyId]);
@@ -31,6 +31,7 @@ export async function processQuestion({companyId,userId,companyName,question,onE
   const validSources=sources.map(s=>({id:s.ref,documentId:s.document_id,name:s.document_name,url:s.drive_url||null}));
   let answer='',inputTokens=0,outputTokens=0;
   try{
+    signal?.throwIfAborted();
     onEvent({type:'sources',sources:validSources});
     if(!sources.length){answer='No encuentro esa información en los documentos disponibles.';onEvent({type:'delta',text:answer});}
     else{
@@ -39,7 +40,8 @@ export async function processQuestion({companyId,userId,companyName,question,onE
         if(item.type==='usage'){inputTokens=Number(item.usage?.prompt_tokens||0);outputTokens=Number(item.usage?.completion_tokens||0);}
       }
     }
-    if(signal.aborted)throw new Error('Respuesta interrumpida');
+    if(signal?.aborted)throw new Error('Respuesta interrumpida');
+    if(!answer.trim())throw new HttpError(502,'El servicio no devolvió una respuesta. Intenta de nuevo.');
     await run(`UPDATE messages SET answer=?,sources=?,input_tokens=?,output_tokens=?,state='ok' WHERE id=? AND company_id=?`,[answer,JSON.stringify(validSources),inputTokens,outputTokens,messageId,companyId]);
     onEvent({type:'done',messageId,inputTokens,outputTokens});
   }catch(e){await run(`UPDATE messages SET state='error',answer=? WHERE id=? AND company_id=?`,[String(e.message||'Error').slice(0,200),messageId,companyId]).catch(()=>{});throw e;}

@@ -29,10 +29,10 @@ Aplicación web de asistencia documental para múltiples empresas. **Es el produ
 2. Abre PowerShell o CMD en esta carpeta y ejecuta:
 
 ```powershell
-copy backend\.env.example backend\.env
+npm run setup:env
 ```
 
-3. Abre `backend/.env`. Cambia `JWT_SECRET` por una cadena aleatoria de **mínimo 32 caracteres** (por ejemplo, generada con `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`). Añade `GROQ_API_KEY`.
+3. El comando genera un JWT aleatorio y conserva cualquier `.env` existente. Añade una clave nueva de `GROQ_API_KEY` mediante configuración privada para generar respuestas. No compartas claves ni las guardes en Git.
 4. Inicia MySQL:
 
 ```powershell
@@ -42,14 +42,14 @@ docker compose up -d db
 5. Instala dependencias, aplica SQL y ejecuta:
 
 ```powershell
-npm install
+npm ci
 npm run db:migrate
 npm run dev
 ```
 
 6. Abre **http://127.0.0.1:5173**. El backend responde en `http://127.0.0.1:4000/api/health`.
 
-También puedes ejecutar `INICIAR_WINDOWS.bat`. El script abre el `.env` en el primer uso. Si prefieres Linux, `./INICIAR_LINUX.sh`.
+También puedes ejecutar `INICIAR_WINDOWS.bat`. El script genera la configuración local si todavía no existe. Si prefieres Linux, `./INICIAR_LINUX.sh`.
 
 **Modo producción local:** `npm run build` y después `npm start` sirven frontend y API desde el puerto 4000. Configura `NODE_ENV=production`, HTTPS con proxy inverso y credenciales seguras antes de desplegarlo públicamente.
 
@@ -147,7 +147,10 @@ Tras arrancar la API y ejecutar `npm run db:seed`, prueba endpoints reales (sesi
 
 ```bash
 npm run smoke
+npm run check:api
 ```
+
+`check:api` comprueba 24 casos de permisos, aislamiento y validación con la API local y las cuentas demo. Para comprobar cuotas frente a solicitudes simultáneas, ejecuta `npm run check:concurrency` en desarrollo: crea una empresa temporal y elimina sus datos al terminar. Los dos comandos rechazan el modo producción.
 
 Consulta `docs/PRUEBAS_DE_ACEPTACION.md` para las siete pruebas del PDF y `docs/INFORME_1_PAGINA_PLANTILLA.md` para el informe final. Varias requieren tus claves reales; no se pueden acreditar con mocks. El registro de estado real de esta entrega está en `VERIFICACION.md`.
 
