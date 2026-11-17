@@ -1,4 +1,4 @@
-const formats=/\.(pdf|docx|txt|md|csv)$/i;
+const formats=/\.(pdf|docx|txt|md|csv|png|jpe?g)$/i;
 const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 export function filterDocuments(documents,{query='',state='',source=''}={}){
  const terms=normalize(query).trim().split(/\s+/).filter(Boolean);
@@ -9,7 +9,7 @@ export async function uploadDocuments(files,{upload,maxBytes,onProgress=()=>{}})
  for(const [index,file] of Array.from(files).entries()){
   onProgress({current:index+1,total:files.length,name:file.name});
   try{
-   if(!formats.test(file.name))throw new Error('Formato no admitido: usa PDF, DOCX, TXT, MD o CSV.');
+   if(!formats.test(file.name))throw new Error('Formato no admitido: usa PDF, DOCX, TXT, MD, CSV, PNG o JPG.');
    if(!file.size)throw new Error('El archivo está vacío.');
    if(file.size>maxBytes)throw new Error(`Supera el límite de ${Math.round(maxBytes/1024/1024)} MB.`);
    await upload(file);

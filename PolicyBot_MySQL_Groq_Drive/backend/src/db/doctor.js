@@ -31,7 +31,7 @@ if(!portWorks){
   let connection;
   try{
     connection=await mysql.createConnection({...env.db,connectTimeout:5000});
-    const [rows]=await connection.query("SELECT COUNT(*) AS total FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('plans','companies','users','documents','chunks','messages','sync_runs')");
+    const [rows]=await connection.query("SELECT COUNT(*) AS total FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('plans','companies','users','documents','chunks','messages','sync_runs','conversations','auth_tokens')");
     console.log(`Conexión a MySQL: OK. Tablas PolicyBot detectadas: ${rows[0].total}.`);
     if(rows[0].total===0)console.log('Ejecuta npm run db:migrate para crear las tablas.');
   }catch(error){

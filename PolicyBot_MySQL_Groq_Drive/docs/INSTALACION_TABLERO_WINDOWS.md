@@ -61,3 +61,7 @@ Voyage es opcional. Al cambiar proveedor de embeddings, reindexa los documentos.
 - Archivo rechazado: revisa formato, tamaño, codificación UTF-8 y si el documento está dañado o protegido.
 
 No se ha validado esta instalación en una máquina Windows durante la revisión en la nube. Los comandos de Node, las migraciones y MySQL sí se ejecutaron en Linux; el archivo BAT se revisó sin ejecutarlo.
+
+## Conversaciones, correo, OCR y copias
+
+La actualización requiere `npm run db:migrate` para incorporar conversaciones, enlaces de acceso y páginas. Consulta [OPERACION.md](OPERACION.md) para configurar SMTP/APP_URL, preparar búsqueda neuronal, instalar Tesseract/Poppler y programar o restaurar copias cifradas. Guarda la clave de copias fuera del equipo; los archivos de copia y el `.env` no se suben a Git.

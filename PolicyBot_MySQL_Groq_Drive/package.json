@@ -17,12 +17,19 @@
     "setup:env": "node scripts/setup-env.mjs",
     "db:doctor": "node backend/src/db/doctor.js",
     "check:concurrency": "node scripts/check-concurrency.mjs",
-    "check:api": "node scripts/check-api.mjs"
+    "check:api": "node scripts/check-api.mjs",
+    "prepare:semantic": "node scripts/prepare-semantic.mjs",
+    "backup": "node scripts/backup.mjs",
+    "backup:restore": "node scripts/backup.mjs restore",
+    "check:features": "node scripts/check-features.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
   },
   "engines": {
     "node": ">=22.16.0"
+  },
+  "overrides": {
+    "sharp": "^0.35.5"
   }
 }

@@ -1,8 +1,8 @@
 import {useEffect,useRef,useState} from 'react';
-import {House,BookOpen,ChevronRight,FileText,LogOut,Menu,MessageSquareText,ShieldCheck,Users,X} from 'lucide-react';
+import {House,BookOpen,ChevronRight,FileText,LogOut,Menu,MessageSquareText,ShieldCheck,Users,X,Plug} from 'lucide-react';
 import {Notice} from './UI.jsx';
 import {useAuth} from '../context/AuthContext.jsx';
-const tabs=[{id:'home',label:'Inicio',icon:House},{id:'chat',label:'Asistente',icon:MessageSquareText},{id:'documents',label:'Documentos',icon:FileText},{id:'users',label:'Colaboradores',icon:Users},{id:'usage',label:'Plan y consumo',icon:ShieldCheck},{id:'help',label:'Ayuda',icon:BookOpen}];
+const tabs=[{id:'home',label:'Inicio',icon:House},{id:'chat',label:'Asistente',icon:MessageSquareText},{id:'documents',label:'Documentos',icon:FileText},{id:'users',label:'Colaboradores',icon:Users},{id:'usage',label:'Plan y consumo',icon:ShieldCheck},{id:'integrations',label:'Integraciones',icon:Plug},{id:'help',label:'Ayuda',icon:BookOpen}];
 export default function Shell({tab,setTab,children}){
  const {session,logout}=useAuth();const [open,setOpen]=useState(false),[mobile,setMobile]=useState(()=>window.matchMedia('(max-width:800px)').matches),[logoutError,setLogoutError]=useState(''),[leaving,setLeaving]=useState(false);
  const sidebar=useRef(null),menu=useRef(null),main=useRef(null),returnToMenu=useRef(false);
@@ -33,7 +33,7 @@ export default function Shell({tab,setTab,children}){
   <aside id="main-navigation" ref={sidebar} inert={mobile&&!open} onKeyDown={handleMenuKey} className={'sidebar '+(open?'sidebar-open':'')}>
    <div className="side-top"><div className="brand-mark">P<span>•</span></div><div className="brand-copy"><strong>PolicyBot</strong><span>Asistente documental</span></div><button className="icon-button close-side" onClick={closeMenu} aria-label="Cerrar menú"><X size={19}/></button></div>
    <div className="side-divider"/><div className="side-heading">ESPACIO DE TRABAJO</div>
-   <nav className="side-nav" aria-label="Navegación principal">{tabs.filter(t=>t.id!=='users'||session?.user?.role==='admin').map(({id,label,icon:Icon})=><button key={id} aria-current={tab===id?'page':undefined} className={'nav-item '+(tab===id?'nav-selected':'')} onClick={()=>setTab(id)}><Icon size={19} strokeWidth={1.9}/><span>{label}</span>{tab===id&&<span className="nav-indicator"/>}</button>)}</nav>
+   <nav className="side-nav" aria-label="Navegación principal">{tabs.filter(t=>!['users','integrations'].includes(t.id)||session?.user?.role==='admin').map(({id,label,icon:Icon})=><button key={id} aria-current={tab===id?'page':undefined} className={'nav-item '+(tab===id?'nav-selected':'')} onClick={()=>setTab(id)}><Icon size={19} strokeWidth={1.9}/><span>{label}</span>{tab===id&&<span className="nav-indicator"/>}</button>)}</nav>
    <div className="sidebar-spacer"/>
 
    <div className="profile-card"><div className="avatar">{first}</div><div className="profile-copy"><strong title={session?.user?.name}>{session?.user?.name}</strong><span>{session?.company?.name}</span></div><button className="icon-button" title="Cerrar sesión" aria-label="Cerrar sesión" disabled={leaving} onClick={signOut}><LogOut size={18}/></button></div>

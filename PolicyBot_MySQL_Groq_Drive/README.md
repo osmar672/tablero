@@ -157,11 +157,11 @@ Consulta `docs/PRUEBAS_DE_ACEPTACION.md` para las siete pruebas del PDF y `docs/
 ## Limitaciones del MVP
 
 - Los embeddings JSON se puntúan en el proceso Node (búsqueda exacta), no con un índice vectorial dentro de MySQL. Funciona para volúmenes reducidos; para miles de documentos requiere una implementación de búsqueda vectorial indexada.
-- Sin OCR: los PDF que son exclusivamente imágenes no se indexan.
+- OCR con Tesseract y Poppler: admite PNG/JPG y hasta 20 páginas escaneadas por PDF. Requiere instalar esos programas; la calidad del reconocimiento depende del escaneo.
 - Sin panel de propietario de plataforma para cobros. Planes `gratis`/`pro` y cuotas **sí** están implementados, sin integración de pagos.
-- El alta de colaboradores crea credenciales iniciales. No hay envío automático de correo ni recuperación de contraseña.
+- El alta admite credenciales iniciales o invitación por correo. Recuperación e invitaciones requieren un servidor SMTP configurado.
 - La sincronización periódica usa un proceso cron en el servidor y no una cola distribuida.
-- El modo local de hashing recupera principalmente términos coincidentes. Para demostrar RAG semántico completo usa Voyage.
+- El modo `local` usa hashing y coincidencias léxicas. `transformers` añade un modelo neuronal multilingüe en CPU; `voyage` usa un servicio externo. Cambiar de modelo requiere reindexar. La descarga inicial del modelo local necesita acceso a Hugging Face.
 
 ## Referencias oficiales
 
@@ -170,3 +170,14 @@ Consulta `docs/PRUEBAS_DE_ACEPTACION.md` para las siete pruebas del PDF y `docs/
 - https://developers.google.com/workspace/guides/create-credentials
 - https://developers.google.com/workspace/drive/api/guides/manage-downloads
 - https://docs.voyageai.com/docs/embeddings
+
+## Conversaciones, acceso, OCR y copias
+
+Consulta [OPERACION.md](docs/OPERACION.md) para configurar correo, búsqueda neuronal, OCR, comprobaciones de integración y copias cifradas/restauración. La migración `002_conversations_access_citations.sql` conserva las consultas anteriores en conversaciones privadas y añade páginas a los nuevos documentos.
+
+```bash
+npm run db:migrate
+npm run check:features
+```
+
+`check:features` necesita la API local y MySQL. Crea dos empresas temporales, comprueba los nuevos flujos y elimina sus datos. Simula el transporte de IA y correo; no acredita conexiones reales con proveedores externos.

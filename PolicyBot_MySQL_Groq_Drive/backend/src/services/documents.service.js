@@ -24,15 +24,16 @@ export async function indexDocument(companyId,documentId,text){
   const doc=await one('SELECT id FROM documents WHERE id=? AND company_id=?',[documentId,companyId]);
   if(!doc)throw new HttpError(404,'Documento no encontrado');
   try{
-  const pieces=splitText(text);
+  const pages=typeof text==='string'?[{number:null,text}]:text.pages;
+  const pieces=pages.flatMap(page=>splitText(page.text).map(content=>({content,page:page.number})));
   if(!pieces.length)throw new HttpError(422,'Documento sin contenido indexable');
   if(pieces.length>350)throw new HttpError(413,'Documento demasiado largo para este MVP');
   await run(`UPDATE documents SET state='indexando',error_message=NULL WHERE id=? AND company_id=?`,[documentId,companyId]);
     const vectors=[];
-    for(let i=0;i<pieces.length;i+=32)vectors.push(...await embed(pieces.slice(i,i+32),'document'));
+    for(let i=0;i<pieces.length;i+=32)vectors.push(...await embed(pieces.slice(i,i+32).map(p=>p.content),'document'));
     await transaction(async cx=>{
       await cx.execute('DELETE FROM chunks WHERE document_id=? AND company_id=?',[documentId,companyId]);
-      for(let i=0;i<pieces.length;i++)await cx.execute(`INSERT INTO chunks(id,company_id,document_id,chunk_index,content,embedding,embedding_model) VALUES (?,?,?,?,?,?,?)`,[randomUUID(),companyId,documentId,i,pieces[i],JSON.stringify(vectors[i]),embeddingModel()]);
+      for(let i=0;i<pieces.length;i++)await cx.execute(`INSERT INTO chunks(id,company_id,document_id,chunk_index,content,embedding,embedding_model,page_number) VALUES (?,?,?,?,?,?,?,?)`,[randomUUID(),companyId,documentId,i,pieces[i].content,JSON.stringify(vectors[i]),embeddingModel(),pieces[i].page]);
       await cx.execute(`UPDATE documents SET state='indexado',chunk_count=?,indexed_at=NOW(3),error_message=NULL WHERE id=? AND company_id=?`,[pieces.length,documentId,companyId]);
     });
     return pieces.length;
@@ -65,6 +66,6 @@ export async function previewDocument(companyId,id,offset=0){
   const document=await one('SELECT id,name,source,state,drive_url FROM documents WHERE id=? AND company_id=?',[id,companyId]);
   if(!document)throw new HttpError(404,'Documento no encontrado');
   const count=await one('SELECT COUNT(*) AS total FROM chunks WHERE document_id=? AND company_id=?',[id,companyId]);
-  const chunks=await many('SELECT chunk_index,content FROM chunks WHERE document_id=? AND company_id=? ORDER BY chunk_index LIMIT 5 OFFSET '+offset,[id,companyId]);
+  const chunks=await many('SELECT chunk_index,content,page_number FROM chunks WHERE document_id=? AND company_id=? ORDER BY chunk_index LIMIT 5 OFFSET '+offset,[id,companyId]);
   return {document,chunks,total:Number(count.total),nextOffset:offset+chunks.length<Number(count.total)?offset+chunks.length:null};
 }

@@ -1,4 +1,5 @@
 import express from 'express';
+import integrations from './routes/integrations.routes.js';
 import helmet from 'helmet';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
@@ -25,7 +26,7 @@ app.use('/api',(req,res,next)=>{
   }next();
 });
 app.get('/api/health',asyncHandler(async(_req,res)=>{await pool.query({sql:'SELECT 1',timeout:3000});res.json({ok:true,app:'PolicyBot',database:'mysql',chat:'groq'});}));
-app.use('/api/auth',auth);app.use('/api/users',users);app.use('/api/documents',docs);app.use('/api/drive',drive);app.use('/api/chat',chat);app.use('/api/usage',usage);
+app.use('/api/integrations',integrations);app.use('/api/auth',auth);app.use('/api/users',users);app.use('/api/documents',docs);app.use('/api/drive',drive);app.use('/api/chat',chat);app.use('/api/usage',usage);
 app.use('/api',(_req,_res,next)=>next(new HttpError(404,'Ruta no encontrada')));
 const dist=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../frontend/dist');
 app.use(express.static(dist,{maxAge:env.nodeEnv==='production'?'1h':0}));

@@ -14,7 +14,7 @@ test('setup genera un JWT exclusivo y conserva el archivo de configuración exis
   await fs.copyFile(new URL('../.env.example',import.meta.url),path.join(dir,'backend/.env.example'));
   await exec(process.execPath,[path.join(dir,'scripts/setup-env.mjs')]);
   const target=path.join(dir,'backend/.env'),first=await fs.readFile(target,'utf8');
-  assert.match(first,/^JWT_SECRET=[a-f0-9]{96}$/m);assert.match(first,/^GROQ_API_KEY=$/m);
+  assert.match(first,/^JWT_SECRET=[a-f0-9]{96}$/m);assert.match(first,/^BACKUP_ENCRYPTION_KEY=[a-f0-9]{96}$/m);assert.notEqual(first.match(/^JWT_SECRET=(.+)$/m)[1],first.match(/^BACKUP_ENCRYPTION_KEY=(.+)$/m)[1]);assert.match(first,/^GROQ_API_KEY=$/m);
   if(process.platform!=='win32')assert.equal((await fs.stat(target)).mode&0o777,0o600);
   await exec(process.execPath,[path.join(dir,'scripts/setup-env.mjs')]);assert.equal(await fs.readFile(target,'utf8'),first);
  }finally{await fs.rm(dir,{recursive:true,force:true});}

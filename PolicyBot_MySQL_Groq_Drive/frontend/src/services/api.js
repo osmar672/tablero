@@ -10,8 +10,8 @@ export async function api(path,{method='GET',body,signal}={}){
   if(!res.ok){sessionExpired(res.status,path);throw new ApiError(data.details?.find(d=>d.field==='password')?.message||data.error||`Error ${res.status}`,res.status,data.details||[]);}
   return data;
 }
-export async function chatStream(question,{onEvent,signal}={}){
-  const res=await fetch('/api/chat/stream',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({question}),signal});
+export async function chatStream(question,{onEvent,signal,conversationId}={}){
+  const res=await fetch('/api/chat/stream',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,...(conversationId?{conversationId}:{})}),signal});
   if(!res.ok){sessionExpired(res.status,'/chat/stream');let message=`Error ${res.status}`;try{message=(await res.json()).error||message;}catch{}throw new ApiError(message,res.status);}
   if(!res.body)throw new Error('Streaming no disponible');
   const reader=res.body.getReader(),decoder=new TextDecoder();let buffer='',completed=false;

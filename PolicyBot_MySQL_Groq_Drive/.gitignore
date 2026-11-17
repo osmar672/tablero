@@ -8,3 +8,7 @@ frontend/dist/
 *.log
 .DS_Store
 coverage/
+**/.cache/
+**/backups/
+*.pbb
+*.pbb.tmp

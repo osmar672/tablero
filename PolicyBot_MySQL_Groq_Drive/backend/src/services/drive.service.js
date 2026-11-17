@@ -4,7 +4,7 @@ import {google} from 'googleapis';
 import {randomUUID} from 'node:crypto';
 import {env} from '../config/env.js';
 import {one,many,run} from '../db/pool.js';
-import {extractFile} from './extraction.service.js';
+import {extractDocument} from './extraction.service.js';
 import {createDocument,indexDocument} from './documents.service.js';
 import {embeddingModel} from './embedding.service.js';
 import {HttpError} from '../utils/errors.js';
@@ -12,7 +12,7 @@ export const DRIVE_MIMES=new Map([
   ['application/vnd.google-apps.document','text/plain'],
   ['application/vnd.google-apps.spreadsheet','text/csv']
 ]);
-export const DOWNLOADABLE=new Set(['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','text/plain','text/markdown','text/csv']);
+export const DOWNLOADABLE=new Set(['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','text/plain','text/markdown','text/csv','image/png','image/jpeg']);
 const active=new Set();
 export function driveClient(){
   const file=path.resolve(env.backendDir,env.googleCredentials);
@@ -51,14 +51,14 @@ export async function downloadDriveFile(file,api){
     const response=await api.files.export({fileId:file.id,mimeType:exportMime},{responseType:'arraybuffer'});
     const buffer=Buffer.isBuffer(response.data)?response.data:Buffer.from(response.data);
     if(buffer.length>env.uploadLimit)throw new HttpError(413,'Archivo demasiado grande');
-    return extractFile(buffer,exportMime);
+    return extractDocument(buffer,exportMime);
   }
   if(!DOWNLOADABLE.has(file.mimeType))throw new HttpError(415,'Formato no soportado');
   if(Number(file.size||0)>env.uploadLimit)throw new HttpError(413,'Archivo demasiado grande');
   const response=await api.files.get({fileId:file.id,alt:'media',supportsAllDrives:true},{responseType:'arraybuffer'});
   const buffer=Buffer.isBuffer(response.data)?response.data:Buffer.from(response.data);
   if(buffer.length>env.uploadLimit)throw new HttpError(413,'Archivo demasiado grande');
-  return extractFile(buffer,file.mimeType);
+  return extractDocument(buffer,file.mimeType);
 }
 export async function configureFolder(companyId,folderId){
   if(folderId)await validateFolder(folderId);
